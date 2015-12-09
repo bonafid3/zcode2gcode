@@ -1,0 +1,220 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ZCode2GCode</class>
+ <widget class="QDialog" name="ZCode2GCode">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>728</width>
+    <height>703</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>ZCode2GCode</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_9">
+   <item>
+    <widget class="QPlainTextEdit" name="mPlainTextEdit">
+     <property name="font">
+      <font>
+       <family>Fixedsys</family>
+      </font>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_8">
+       <item>
+        <widget class="QGroupBox" name="groupBox_5">
+         <property name="title">
+          <string>Head temperature</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+          <item>
+           <widget class="QSpinBox" name="mHeadTempSpinBox">
+            <property name="suffix">
+             <string>°C</string>
+            </property>
+            <property name="minimum">
+             <number>180</number>
+            </property>
+            <property name="maximum">
+             <number>300</number>
+            </property>
+            <property name="singleStep">
+             <number>1</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="mBedTempGroupBox">
+         <property name="title">
+          <string>Bed temperature</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_6">
+          <item>
+           <widget class="QSpinBox" name="mBedTempSpinBox">
+            <property name="suffix">
+             <string>°C</string>
+            </property>
+            <property name="minimum">
+             <number>25</number>
+            </property>
+            <property name="maximum">
+             <number>120</number>
+            </property>
+            <property name="value">
+             <number>60</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string>E scale</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QSpinBox" name="mEScaleSpinBox">
+            <property name="suffix">
+             <string>%</string>
+            </property>
+            <property name="minimum">
+             <number>10</number>
+            </property>
+            <property name="maximum">
+             <number>1000</number>
+            </property>
+            <property name="value">
+             <number>100</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_4">
+         <property name="title">
+          <string>Shift layers down by</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="QDoubleSpinBox" name="mZOffsetDoubleSpinBox">
+            <property name="suffix">
+             <string>mm</string>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <double>200.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.050000000000000</double>
+            </property>
+            <property name="value">
+             <double>1.600000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <widget class="QGroupBox" name="groupBox_2">
+         <property name="title">
+          <string>ZCode input file</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="QLineEdit" name="mZCodeFileLineEdit">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="mBrowseZCodePushButton">
+              <property name="text">
+               <string>Browse</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string>GCode output file</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QLineEdit" name="mGCodeFileLineEdit">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="mBrowseGCodePushButton">
+              <property name="text">
+               <string>Browse</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QPushButton" name="mConvertPushButton">
+     <property name="text">
+      <string>Convert</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+  <zorder>mPlainTextEdit</zorder>
+  <zorder>mConvertPushButton</zorder>
+  <zorder></zorder>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>
