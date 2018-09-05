@@ -135,7 +135,7 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
     #define wsi(s,i) { ws(s);wi(i); }
     #define wsf(s,f) { ws(s);wf(f); }
     #define wln res.append("\r\n",2)
-    #define wstln(s) { ws(QByteArray(";TYPE:")+s+"\r\n"); }
+    #define wstln(s) { ws(QByteArray(";segType:")+s+"\r\n"); }
 
 #define X 0
 #define Y 1
@@ -162,14 +162,14 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
     //M190 S60 ;set and wait bed temperature
     //M109 S215 ;set and wait head temperature
 
-    ws("M104S"); wi(ui->mHeadTempSpinBox->value()); wln;
+    ws("M104 S"); wi(ui->mHeadTempSpinBox->value()); wln;
     if(ui->mBedTempGroupBox->isChecked())
     {
         // set and wait for bed temp
-        ws("M190S"); wi(ui->mBedTempSpinBox->value()); wln;
+        ws("M190 S"); wi(ui->mBedTempSpinBox->value()); wln;
     }
     // set and wait for head temp
-    ws("M109"); wi(ui->mHeadTempSpinBox->value()); wln;
+    ws("M109 S"); wi(ui->mHeadTempSpinBox->value()); wln;
 
     while(pnext<pend)
     {
@@ -195,7 +195,7 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
         if(p0==0x02) //set feedrate
         {
             const int spd = *(int*)(p+1);
-            wsi("G1F", spd); wln;
+            wsi("G1 F", spd); wln;
             //layer.append("G1F"); appendInt(layer, spd); layer.append("\r\n");
             continue;
         }
@@ -216,7 +216,7 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
                     if(p1&(1<<i))
                     {
                         val++; //discard value
-                        ws(xyz[i]+QByteArray("0"));
+                        ws(xyz[i]+QByteArray("0")+" ");
                     }
                 }
                 wln;
@@ -227,7 +227,7 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
             if(p1&0x08) //E
             {
                 cE = *val;
-                wsf("G92E", (*val)*EScale); wln;
+                wsf("G92 E", (*val)*EScale); wln;
                 val++;
             }
 
@@ -251,13 +251,13 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
                     {
                         switch(lastSt) //p1>=128 is travel
                         {
-                            case 0: wstln("OuterShell"); break;
+                            case 0: wstln("Perimeter"); break;
                             case 2: wstln("Loop"); break;
                             case 17: wstln("Loop"); break;
                             case 19: wstln("Loop"); break;
 
-                            case 1: wstln("HorizShell"); break;
-                            case 14: wstln("HorizShell"); break;
+                            case 1: wstln("HShell"); break;
+                            case 14: wstln("HShell"); break;
                             case 3: wstln("Infill"); break;
 
                             case 10: wstln("Raft"); break;
@@ -270,8 +270,8 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
                             case 7: wstln("WeakSupport"); break;
                             case 9: wstln("Support"); break;
 
-                            case 15: wstln("HorizShell"); break;
-                            case 18: wstln("HorizShell"); break;
+                            case 15: wstln("HShell"); break;
+                            case 18: wstln("HShell"); break;
 
                             case 20: wstln("Perimeter"); break; // small segment, default flow
                             case 21: wstln("Travel"); break; // some kind of travel
@@ -279,12 +279,14 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
                             case 22:
                             case 23: wstln("WeakRaft"); wstln("Raft"); break; // object's first layer (weak)
 
+                            case 27: wstln("HShell"); break;
+
                             default: wstln("Skirt " + toStr(lastSt)); unknownPathTypes << p1;
                         }
                     }
                 }
 
-                ws("G1");
+                ws("G1 ");
 
                 //layer.append("G1");
 
@@ -300,9 +302,9 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
                             f = ((*val) - ui->mZOffsetDoubleSpinBox->value()*800) * scale[i];
                         }
 
-                        if(f<-1 || f>200)
+                        if(i != 3 && (f<-1 || f>200))
                         {
-                            echo("Out of range: "+toStr(i)+toStr(p0)+toHex(p,siz));
+                            echo("Out of range: "+toStr(f)+", "+xyze[i]+" "+toStr(p0)+toHex(p,siz));
                         }
 
                         if(i == Z)
@@ -314,7 +316,7 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
 
                         //layer.append(xyze[i]); appendFloat3(layer, f);
 
-                        wsf(xyze[i], f);
+                        wsf(xyze[i], f); ws(" ");
                         val++;
                     }
                 }
@@ -330,8 +332,8 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
                     switch(i)
                     {
                         case 5: // FAN
-                            wsi("M106S", *val); wln;
-                            //layer.append("M106S"); appendInt(layer, *val); layer.append("\r\n");
+                            wsi("M106 S", *val); wln;
+                            //layer.append("M106 S"); appendInt(layer, *val); layer.append("\r\n");
                             val++;
                         break;
                         case 6:
@@ -356,9 +358,13 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
 
             continue;
         }
+        if(p0 == 0x12) {
+            echo(toStr((int)pnext) + "," + toStr((int)pend));
+            break;
+        }
     }
 
-    ws("G1X0Y0F5000"); wln;
+    ws("G1 X0 Y0 F5000"); wln;
 
     if(!unknownPathTypes.empty())
     {

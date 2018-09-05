@@ -5,8 +5,8 @@
 
 template <typename T>
 Q_DECL_CONSTEXPR inline T inRange(const T &a, const T &mi, const T &ma) { return a>=mi && a<=ma; }
-Q_DECL_CONSTEXPR inline QString toStr(int i) { return QString::number(i); }
-Q_DECL_CONSTEXPR inline QString toStr(float f) { return QString::number(f); }
+inline QString toStr(int i) { return QString::number(i); }
+inline QString toStr(float f) { return QString::number(f); }
 
 Q_DECL_CONSTEXPR inline bool checkAndSet  (bool& b) { bool res = !b; b = true ; return res; }
 
