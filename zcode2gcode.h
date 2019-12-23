@@ -27,6 +27,7 @@ private slots:
 
 private:
     Ui::ZCode2GCode *ui;
+    void check(const QByteArray src);
     QByteArray convert(const QByteArray src);
 };
 

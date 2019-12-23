@@ -87,12 +87,6 @@ void ZCode2GCode::on_mBrowseZCodePushButton_clicked()
                     file.close();
                     return;
                 }
-                if(file.read(5) != "ZCode")
-                {
-                    QMessageBox::critical(this, "Error", "File: "+fname+" magic is shit!");
-                    file.close();
-                    return;
-                }
                 file.close();
             }
             ui->mGCodeFileLineEdit->setText(fname+".gcode");
@@ -106,6 +100,30 @@ void ZCode2GCode::on_mBrowseZCodePushButton_clicked()
     }
 }
 
+
+/* for reverse engineering/debugging
+void ZCode2GCode::check(const QByteArray src)
+{
+    const char *pstart = src.cbegin();
+    const char *pnext = src.cbegin();
+    const char *pend = src.cend();
+
+    while(pnext < pend)
+    {
+        const char *p = pnext;
+        int siz = p[0];
+        QByteArray ba = src.mid((pnext-pstart)+1, siz);
+        QString out;
+        for(int i=0; i<ba.size();i++)
+        {
+            out += QString("%1").arg(static_cast<unsigned char>(ba[i]) , 2, 16, QChar('0')).toUpper() + " ";
+        }
+        qd << out;
+        pnext += siz+1;
+    }
+}
+*/
+
 QByteArray ZCode2GCode::convert(const QByteArray src)
 {
     ui->mPlainTextEdit->clear();
@@ -114,18 +132,17 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
     if(ui->mGCodeFileLineEdit->text().size())
         s.setValue("gcode_file",ui->mGCodeFileLineEdit->text());
 
-    if(!src.startsWith("ZCode")) return src;
-
     int ePercent = ui->mEScaleSpinBox->value();
     if(!inRange(ePercent, 10, 1000)) ePercent = 100;
 
     //axis scale factors
-    const float XYScale = 1.f/ 640;
-    const float ZScale  = 1.f/ 800;
-    const float EScale  = 1.f/1200*(ePercent/100.f);
+    const float XYScale = 1.f/ 1000;
+    const float ZScale  = 1.f/ 1000;
+    const float EScale  = 1.f/ 1200/(ePercent/100.f);
     const float scale[4] = { XYScale, XYScale, ZScale, EScale };
 
     int cZ=0, cE=0;
+    int gE=0;
 
     QByteArray res, layer;
 
@@ -145,15 +162,7 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
     #define ADDR_PRINT_DURATION 0x36
     #define ADDR_MATERIAL 0x3E
 
-    const char *head = src.cbegin();
-
-    QString materials[] = {"Z-ABS","Z-ULTRAT","Z-GLASS","Z-HIPS","Z-PCABS","Z-PETG"};
-
-    echo("Material: "+materials[head[ADDR_MATERIAL]]);
-    int *pd = (int*)(head+ADDR_PRINT_DURATION);
-    echo("Print duration: "+toStr(*pd/60)+" minutes");
-
-    const char *pnext = src.cbegin()+128;
+    const char *pnext = src.cbegin();
     const char *pend = src.cend();
     int cnt=0;
     int lastSt = -1;
@@ -227,7 +236,7 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
             if(p1&0x08) //E
             {
                 cE = *val;
-                wsf("G92 E", (*val)*EScale); wln;
+                wsf("G92 E", gE*EScale); wln;
                 val++;
             }
 
@@ -239,7 +248,7 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
 
         if(p0==0x01) //move XYZE, FAN and something unknown
         {
-            int *val = (int*)(p+3);
+            int* val = (int*)(p+3);
 
             if(p2&0x0f)
             {
@@ -251,8 +260,11 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
                     {
                         switch(lastSt) //p1>=128 is travel
                         {
-                            case 0: wstln("Perimeter"); break;
+                            case 0:
+                            wstln("Perimeter");
+                            break;
                             case 2: wstln("Loop"); break;
+                            case 16: wstln("Loop"); break;
                             case 17: wstln("Loop"); break;
                             case 19: wstln("Loop"); break;
 
@@ -279,6 +291,7 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
                             case 22:
                             case 23: wstln("WeakRaft"); wstln("Raft"); break; // object's first layer (weak)
 
+                            case 25: wstln("Bridge") wstln("Skirt") break;
                             case 27: wstln("HShell"); break;
 
                             default: wstln("Skirt " + toStr(lastSt)); unknownPathTypes << p1;
@@ -296,20 +309,25 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
                     if(p2&(1<<i))
                     {
                         float f = (*val)*scale[i];
+                        if(i == E) {
+                            gE += *val;
+                            f = gE*scale[i];
+                        }
 
                         if(i == Z)
                         {
+                            qd << "ZVAL:" << *val;
                             f = ((*val) - ui->mZOffsetDoubleSpinBox->value()*800) * scale[i];
                         }
 
-                        if(i != 3 && (f<-1 || f>200))
+                        if(i != E && (f<-1 || f>200))
                         {
                             echo("Out of range: "+toStr(f)+", "+xyze[i]+" "+toStr(p0)+toHex(p,siz));
                         }
 
                         if(i == Z)
                         {
-                            int newZ = qRound(f*1000);
+                            int newZ = f;
                             if(cZ != newZ) { cZ = newZ; }
                             echo("Z VAL: "+ toHex(p, siz));
                         }
@@ -381,7 +399,9 @@ void ZCode2GCode::on_mConvertPushButton_clicked()
     QFile file(ui->mZCodeFileLineEdit->text());
     if(file.open(QFile::ReadOnly))
     {
-        gcode = convert(file.readAll());
+        QByteArray src = file.readAll();
+        //check(src);
+        gcode = convert(src);
         if(gcode.size())
         {
             QFile ofile(ui->mGCodeFileLineEdit->text());
