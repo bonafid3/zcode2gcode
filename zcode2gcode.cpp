@@ -7,6 +7,8 @@
 #include <QDebug>
 #include <QFileDialog>
 
+
+
 #include "utils.h"
 
 #define ORG "yingfeiyi"
@@ -316,7 +318,7 @@ QByteArray ZCode2GCode::convert(const QByteArray src)
 
                         if(i == Z)
                         {
-                            qd << "ZVAL:" << *val;
+                            //qd << "ZVAL:" << *val;
                             f = ((*val) - ui->mZOffsetDoubleSpinBox->value()*800) * scale[i];
                         }
 
